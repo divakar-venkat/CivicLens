@@ -4,7 +4,17 @@ const complaintSchema = new mongoose.Schema(
   {
     title: String,
     description: String,
-    image: String,
+
+    media: [
+      {
+        data: String,
+        type: String,
+        uploaded: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
 
     location: {
       lat: Number,
@@ -14,7 +24,15 @@ const complaintSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      enum: ["road", "garbage", "water", "other"],
+      enum: [
+        "pothole",
+        "garbage",
+        "streetlight",
+        "water",
+        "parking",
+        "dumping",
+        "other",
+      ],
       default: "other",
     },
 

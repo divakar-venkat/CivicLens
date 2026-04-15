@@ -8,7 +8,10 @@ export default function Report() {
     title: "",
     description: "",
     address: "",
+    category: "",
   });
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +22,40 @@ export default function Report() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+
+    if (files.length + mediaFiles.length > 3) {
+      setError("Maximum 3 files allowed");
+      return;
+    }
+
+    setMediaFiles([...mediaFiles, ...files]);
+
+    // Create previews
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setMediaPreviews((prev) => [
+          ...prev,
+          {
+            src: event.target.result,
+            type: file.type,
+            name: file.name,
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setError(null);
+  };
+
+  const removeMedia = (index) => {
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+    setMediaPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -34,28 +71,38 @@ export default function Report() {
         return;
       }
 
-      const payload = {
-        title: formData.title,
-        description: formData.description,
-        image: "placeholder",
-        location: {
-          address: formData.address || "Not specified",
-        },
-      };
+      // Create FormData for multipart/form-data
+      const submitData = new FormData();
+      submitData.append("title", formData.title);
+      submitData.append("description", formData.description);
+      submitData.append("category", formData.category || "");
+      submitData.append("location", JSON.stringify({ address: formData.address || "Not specified" }));
 
-      const response = await API.post("/complaints", payload);
+      // Add media files
+      mediaFiles.forEach((file) => {
+        submitData.append("media", file);
+      });
+
+      const response = await API.post("/complaints", submitData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       console.log("Complaint submitted successfully:", response.data);
 
       // Success
       setSuccess(true);
-      setFormData({ title: "", description: "", address: "" });
+      setFormData({ title: "", description: "", address: "", category: "" });
+      setMediaFiles([]);
+      setMediaPreviews([]);
 
-      // Show success for 2 seconds then navigate
+      // Redirect after 2 seconds
       setTimeout(() => {
         navigate("/");
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to submit complaint");
+      setError(err.response?.data?.message || "Failed to submit complaint. Please try again.");
       console.error("Error submitting complaint:", err);
     } finally {
       setLoading(false);
@@ -65,13 +112,11 @@ export default function Report() {
   return (
     <div className="p-4 pb-24 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-2 text-gray-900">Report an Issue</h1>
-      <p className="text-gray-600 mb-6">
-        Help us improve your community by reporting civic issues
-      </p>
+      <p className="text-gray-600 mb-6">Help improve your community by reporting civic issues</p>
 
       {success && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <p className="text-green-800 font-semibold">✓ Complaint submitted successfully!</p>
+          <p className="text-green-800 font-semibold">✓ Report submitted successfully!</p>
           <p className="text-green-700 text-sm mt-1">Redirecting to home...</p>
         </div>
       )}
@@ -115,6 +160,29 @@ export default function Report() {
           />
         </div>
 
+        {/* Category Dropdown */}
+        <div>
+          <label htmlFor="category" className="block text-sm font-semibold text-gray-900 mb-2">
+            Category (optional - auto-detected if not selected)
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+          >
+            <option value="">Auto-Detect</option>
+            <option value="pothole">🕳️ Pothole</option>
+            <option value="garbage">🗑️ Roadside Garbage</option>
+            <option value="streetlight">💡 Broken Streetlight</option>
+            <option value="water">💧 Water Logging</option>
+            <option value="parking">🚗 Illegal Parking</option>
+            <option value="dumping">🚫 Illegal Dumping</option>
+            <option value="other">📌 Other</option>
+          </select>
+        </div>
+
         {/* Address Input */}
         <div>
           <label htmlFor="address" className="block text-sm font-semibold text-gray-900 mb-2">
@@ -130,6 +198,68 @@ export default function Report() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
           />
         </div>
+
+        {/* Media Upload */}
+        <div>
+          <label htmlFor="media" className="block text-sm font-semibold text-gray-900 mb-2">
+            Upload Photos/Videos (max 3 files, up to 5MB each)
+          </label>
+          <div className="relative">
+            <input
+              type="file"
+              id="media"
+              multiple
+              accept="image/*,video/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <label
+              htmlFor="media"
+              className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center gap-2"
+            >
+              <span className="text-2xl">📸 📹</span>
+              <span className="text-sm font-medium text-gray-700">
+                Click to upload or drag and drop
+              </span>
+              <span className="text-xs text-gray-500">PNG, JPG, MP4, MOV, etc.</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Media Previews */}
+        {mediaPreviews.length > 0 && (
+          <div>
+            <p className="text-sm font-semibold text-gray-900 mb-3">
+              Selected Media ({mediaPreviews.length}/3)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {mediaPreviews.map((preview, index) => (
+                <div key={index} className="relative group">
+                  {preview.type.startsWith("image") ? (
+                    <img
+                      src={preview.src}
+                      alt="preview"
+                      className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                    />
+                  ) : (
+                    <video
+                      src={preview.src}
+                      className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeMedia(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition"
+                  >
+                    ✕
+                  </button>
+                  <p className="text-xs text-gray-600 mt-1 truncate">{preview.name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Submit Button */}
         <button
