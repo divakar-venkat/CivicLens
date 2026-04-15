@@ -9,12 +9,15 @@ export default function Report() {
     description: "",
     address: "",
     category: "",
+    latitude: null,
+    longitude: null,
   });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [locatingUser, setLocatingUser] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,6 +25,39 @@ export default function Report() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const getCurrentLocation = () => {
+    setLocatingUser(true);
+    setError(null);
+
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      setLocatingUser(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormData((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+        setLocatingUser(false);
+      },
+      (error) => {
+        let errorMsg = "Failed to get location";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "Permission denied. Please enable location access.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMsg = "Location information is unavailable.";
+        }
+        setError(errorMsg);
+        setLocatingUser(false);
+      }
+    );
   };
 
   const handleFileSelect = (e) => {
@@ -76,7 +112,14 @@ export default function Report() {
       submitData.append("title", formData.title);
       submitData.append("description", formData.description);
       submitData.append("category", formData.category || "");
-      submitData.append("location", JSON.stringify({ address: formData.address || "Not specified" }));
+
+      // Include location with lat/lng if available
+      const location = {
+        address: formData.address || "Not specified",
+        lat: formData.latitude || null,
+        lng: formData.longitude || null,
+      };
+      submitData.append("location", JSON.stringify(location));
 
       // Add media files
       mediaFiles.forEach((file) => {
@@ -93,7 +136,14 @@ export default function Report() {
 
       // Success
       setSuccess(true);
-      setFormData({ title: "", description: "", address: "", category: "" });
+      setFormData({
+        title: "",
+        description: "",
+        address: "",
+        category: "",
+        latitude: null,
+        longitude: null,
+      });
       setMediaFiles([]);
       setMediaPreviews([]);
 
@@ -183,20 +233,41 @@ export default function Report() {
           </select>
         </div>
 
-        {/* Address Input */}
+        {/* Address & Geolocation */}
         <div>
           <label htmlFor="address" className="block text-sm font-semibold text-gray-900 mb-2">
             Location / Address
           </label>
-          <input
-            type="text"
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Enter the address or location of the issue"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-          />
+
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Enter the address or location of the issue"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            />
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              disabled={locatingUser}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition whitespace-nowrap"
+            >
+              {locatingUser ? "📍 Locating..." : "📍 Use My Location"}
+            </button>
+          </div>
+
+          {/* Location Status Display */}
+          {(formData.latitude !== null || formData.longitude !== null) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+              <p className="text-blue-900 font-semibold">✓ Location Detected</p>
+              <p className="text-blue-700 text-xs mt-1">
+                Latitude: {formData.latitude?.toFixed(4)} | Longitude: {formData.longitude?.toFixed(4)}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Media Upload */}

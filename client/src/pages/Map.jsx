@@ -38,9 +38,9 @@ export default function Map() {
     fetchComplaints();
   }, [selectedCategory]);
 
-  // Generate coordinates based on complaint data (with randomness for demo)
-  const getCoordinates = (complaint, index) => {
-    // If complaint has lat/lng, use them
+  // Generate coordinates based on complaint data
+  const getCoordinates = (complaint) => {
+    // Use real coordinates if available
     if (complaint.location?.lat && complaint.location?.lng) {
       return {
         lat: complaint.location.lat,
@@ -48,12 +48,11 @@ export default function Map() {
       };
     }
 
-    // Otherwise, scatter points across Tamil Nadu with some randomness
-    // Tamil Nadu bounds approximately: lat 8-13, lng 77-80
-    const lat = 11.1271 + (Math.random() - 0.5) * 4;
-    const lng = 78.6569 + (Math.random() - 0.5) * 3;
-
-    return { lat, lng };
+    // Fallback to center of Tamil Nadu if no coordinates
+    return {
+      lat: TAMIL_NADU_CENTER[0],
+      lng: TAMIL_NADU_CENTER[1],
+    };
   };
 
   const getCategoryColor = (category) => {
@@ -100,8 +99,8 @@ export default function Map() {
           />
 
           {/* Markers for Complaints */}
-          {complaints.map((complaint, index) => {
-            const coords = getCoordinates(complaint, index);
+          {complaints.map((complaint) => {
+            const coords = getCoordinates(complaint);
             return (
               <Marker
                 key={complaint._id}

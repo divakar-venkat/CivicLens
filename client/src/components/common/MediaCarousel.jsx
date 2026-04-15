@@ -13,8 +13,8 @@ export default function MediaCarousel({ media }) {
   }
 
   const item = media[current];
-  const isVideo = item.type && item.type.startsWith("video");
-  const src = `data:${item.type};base64,${item.data}`;
+  // Media items are now plain base64 strings - assume images for display
+  const src = `data:image/jpeg;base64,${item}`;
 
   const goToPrevious = () => {
     setCurrent((prev) => (prev - 1 + media.length) % media.length);
@@ -27,16 +27,7 @@ export default function MediaCarousel({ media }) {
   return (
     <div className="relative w-full bg-black rounded-lg overflow-hidden">
       {/* Media Display */}
-      {isVideo ? (
-        <video
-          src={src}
-          className="w-full h-48 object-cover"
-          controls
-          controlsList="nodownload"
-        />
-      ) : (
-        <img src={src} alt="complaint media" className="w-full h-48 object-cover" />
-      )}
+      <img src={src} alt="complaint media" className="w-full h-48 object-cover" />
 
       {/* Counter Badge */}
       {media.length > 1 && (

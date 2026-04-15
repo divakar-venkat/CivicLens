@@ -5,16 +5,7 @@ const complaintSchema = new mongoose.Schema(
     title: String,
     description: String,
 
-    media: [
-      {
-        data: String,
-        type: String,
-        uploaded: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+    media: [String],
 
     location: {
       lat: Number,

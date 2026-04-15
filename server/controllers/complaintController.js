@@ -6,14 +6,31 @@ exports.createComplaint = async (req, res) => {
   try {
     const { title, description, category, location } = req.body;
 
-    // Handle media files
+    // Parse location from FormData (comes as JSON string)
+    let parsedLocation = {};
+    try {
+      if (typeof location === "string") {
+        parsedLocation = JSON.parse(location);
+      } else {
+        parsedLocation = location || {};
+      }
+    } catch (e) {
+      parsedLocation = {
+        address: typeof location === "string" ? location : "Not specified",
+      };
+    }
+
+    // Ensure location has proper structure
+    const finalLocation = {
+      lat: parsedLocation.lat || null,
+      lng: parsedLocation.lng || null,
+      address: parsedLocation.address || "Not specified",
+    };
+
+    // Handle media files - store as plain base64 strings
     let media = [];
     if (req.files && req.files.length > 0) {
-      media = req.files.map((file) => ({
-        data: file.buffer.toString("base64"),
-        type: file.mimetype,
-        uploaded: new Date(),
-      }));
+      media = req.files.map((file) => file.buffer.toString("base64"));
     }
 
     // Determine category: use provided or auto-classify
@@ -34,7 +51,7 @@ exports.createComplaint = async (req, res) => {
       title,
       description,
       media,
-      location,
+      location: finalLocation,
       category: finalCategory,
       severity,
     });
