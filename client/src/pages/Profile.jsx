@@ -1,34 +1,31 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { calculateSLA } from "../utils/slaHelper";
-
-// Mock current user (since no auth system)
-const CURRENT_USER = {
-  id: "demo-user",
-  name: "Demo User",
-  location: "Tamil Nadu, India",
-  avatar: "👤",
-};
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
+  const { user } = useAuth();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("reports");
   const [userSettings, setUserSettings] = useState({
-    username: CURRENT_USER.name,
+    username: user?.name || "User",
     language: "English",
     theme: "light",
   });
 
-  // Fetch all complaints
+  // Fetch user's complaints
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
         setLoading(true);
         const response = await API.get("/complaints");
-        // Simulate filtering by current user (in real app, backend would filter)
-        // For now, treat all complaints as belonging to the demo user
-        setComplaints(response.data);
+        // Filter complaints by current user's ID
+        const userComplaints = response.data.filter(
+          (complaint) => complaint.createdBy === user?.id
+        );
+        setComplaints(userComplaints);
       } catch (err) {
         console.error("Error fetching complaints:", err);
       } finally {
@@ -36,8 +33,10 @@ export default function Profile() {
       }
     };
 
-    fetchComplaints();
-  }, []);
+    if (user?.id) {
+      fetchComplaints();
+    }
+  }, [user?.id]);
 
   // Calculate user stats
   const stats = {
@@ -61,11 +60,11 @@ export default function Profile() {
         <div className="px-4 pb-4 -mt-12 relative z-10">
           <div className="flex items-end gap-4 mb-4">
             <div className="w-24 h-24 bg-white rounded-lg shadow-lg flex items-center justify-center text-5xl border-4 border-white">
-              {CURRENT_USER.avatar}
+              {user?.avatar || "👤"}
             </div>
             <div className="pb-2">
-              <h1 className="text-2xl font-bold text-gray-900">{CURRENT_USER.name}</h1>
-              <p className="text-gray-600 text-sm">📍 {CURRENT_USER.location}</p>
+              <h1 className="text-2xl font-bold text-gray-900">{user?.name || "User"}</h1>
+              <p className="text-gray-600 text-sm">📍 {user?.email || "Not specified"}</p>
             </div>
           </div>
         </div>
@@ -369,6 +368,14 @@ function ReportCard({ complaint }) {
 // SETTINGS TAB
 // ============================================
 function SettingsTab({ settings, onSettingChange }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="space-y-4">
       {/* Username Setting */}
@@ -442,9 +449,12 @@ function SettingsTab({ settings, onSettingChange }) {
       </div>
 
       {/* Logout Button */}
-      <button className="w-full px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition flex items-center justify-center gap-2">
+      <button
+        onClick={handleLogout}
+        className="w-full px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition flex items-center justify-center gap-2"
+      >
         <span>🚪</span>
-        <span>Logout (Placeholder)</span>
+        <span>Logout</span>
       </button>
 
       {/* About Section */}

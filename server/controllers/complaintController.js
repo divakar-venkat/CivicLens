@@ -5,6 +5,7 @@ const classifyIssue = require("../services/aiService");
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, category, location } = req.body;
+    const userId = req.user?.userId; // Get from JWT token
 
     // Parse location from FormData (comes as JSON string)
     let parsedLocation = {};
@@ -54,6 +55,7 @@ exports.createComplaint = async (req, res) => {
       location: finalLocation,
       category: finalCategory,
       severity,
+      createdBy: userId,
     });
 
     res.status(201).json(complaint);

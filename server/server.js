@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const multer = require("multer");
 const connectDB = require("./config/db");
+const { createAdminUser, createDemoUser } = require("./scripts/setupUsers");
 
 // Load env
 dotenv.config();
@@ -35,10 +36,19 @@ app.get("/", (req, res) => {
 });
 
 // Routes
+app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/complaints", upload.array("media", 3), require("./routes/complaintRoutes"));
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () =>
-  console.log(`🔥 Server running on http://localhost:${PORT}`)
-);
+app.listen(PORT, async () => {
+  console.log(`🔥 Server running on http://localhost:${PORT}`);
+
+  // Create default users on startup
+  try {
+    await createAdminUser();
+    await createDemoUser();
+  } catch (error) {
+    console.error("Error creating default users:", error);
+  }
+});
