@@ -4,6 +4,56 @@ import API from "../services/api";
 import { calculateSLA } from "../utils/slaHelper";
 import { useAuth } from "../context/AuthContext";
 
+// SVG Icons
+function FileIcon() {
+  return (
+    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+}
+
+function ThumbsUpIcon() {
+  return (
+    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.646 7.289a2 2 0 01-1.789 1.106H7a2 2 0 01-2-2v-8a2 2 0 012-2h3.5a2 2 0 002-2V5a2 2 0 012-2h.5a2 2 0 012 2v7z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function LocationIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function ChatBubbleIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  );
+}
+
 export default function Profile() {
   const { user } = useAuth();
   const [complaints, setComplaints] = useState([]);
@@ -15,13 +65,11 @@ export default function Profile() {
     theme: "light",
   });
 
-  // Fetch user's complaints
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
         setLoading(true);
         const response = await API.get("/complaints");
-        // Filter complaints by current user's ID
         const userComplaints = response.data.filter(
           (complaint) => complaint.createdBy === user?.id
         );
@@ -38,14 +86,12 @@ export default function Profile() {
     }
   }, [user?.id]);
 
-  // Calculate user stats
   const stats = {
     totalReports: complaints.length,
     totalUpvotes: complaints.reduce((sum, c) => sum + (c.upvotes || 0), 0),
     totalResolved: complaints.filter((c) => c.status === "resolved").length,
   };
 
-  // Calculate badges
   const badges = getBadges(stats);
 
   const handleSettingChange = (key, value) => {
@@ -53,140 +99,117 @@ export default function Profile() {
   };
 
   return (
-    <div className="p-4 pb-24">
-      {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-24"></div>
-        <div className="px-4 pb-4 -mt-12 relative z-10">
-          <div className="flex items-end gap-4 mb-4">
-            <div className="w-24 h-24 bg-white rounded-lg shadow-lg flex items-center justify-center text-5xl border-4 border-white">
+    <div className="bg-gray-50 min-h-screen pb-24">
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
+        {/* Profile Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-start gap-6">
+            <div className="w-20 h-20 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0 text-3xl">
               {user?.avatar || "👤"}
             </div>
-            <div className="pb-2">
+            <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-gray-900">{user?.name || "User"}</h1>
-              <p className="text-gray-600 text-sm">📍 {user?.email || "Not specified"}</p>
+              <p className="text-sm text-gray-600 mt-1">{user?.email || "Not specified"}</p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard
-          icon="📋"
-          label="Reports"
-          value={stats.totalReports}
-          color="blue"
-        />
-        <StatCard
-          icon="👍"
-          label="Upvotes"
-          value={stats.totalUpvotes}
-          color="purple"
-        />
-        <StatCard
-          icon="✅"
-          label="Resolved"
-          value={stats.totalResolved}
-          color="green"
-        />
-      </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <FileIcon />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalReports}</p>
+            <p className="text-sm text-gray-600 mt-1">Reports</p>
+          </div>
 
-      {/* Badges Section */}
-      {badges.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-3">🏆 Achievements</h3>
-          <div className="flex flex-wrap gap-2">
-            {badges.map((badge, idx) => (
-              <div
-                key={idx}
-                className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 flex items-center gap-2"
-              >
-                <span>{badge.icon}</span>
-                <span>{badge.label}</span>
-              </div>
-            ))}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <ThumbsUpIcon />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalUpvotes}</p>
+            <p className="text-sm text-gray-600 mt-1">Upvotes</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <CheckIcon />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalResolved}</p>
+            <p className="text-sm text-gray-600 mt-1">Resolved</p>
           </div>
         </div>
-      )}
 
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow mb-6 sticky top-4 z-20">
-        <div className="flex border-b">
-          <TabButton
-            icon="📄"
-            label="My Reports"
-            active={activeTab === "reports"}
-            onClick={() => setActiveTab("reports")}
-          />
-          <TabButton
-            icon="⚙️"
-            label="Settings"
-            active={activeTab === "settings"}
-            onClick={() => setActiveTab("settings")}
-          />
-          <TabButton
-            icon="🧪"
-            label="Tech Info"
-            active={activeTab === "tech"}
-            onClick={() => setActiveTab("tech")}
-          />
+        {/* Badges Section */}
+        {badges.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
+              Achievements
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {badges.map((badge, idx) => (
+                <div
+                  key={idx}
+                  className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm font-medium text-blue-700"
+                >
+                  {badge.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-20 z-30">
+          <div className="flex border-b border-gray-200">
+            <TabButton
+              label="My Reports"
+              active={activeTab === "reports"}
+              onClick={() => setActiveTab("reports")}
+            />
+            <TabButton
+              label="Settings"
+              active={activeTab === "settings"}
+              onClick={() => setActiveTab("settings")}
+            />
+            <TabButton
+              label="Tech Info"
+              active={activeTab === "tech"}
+              onClick={() => setActiveTab("tech")}
+            />
+          </div>
         </div>
+
+        {/* Tab Content */}
+        {activeTab === "reports" && (
+          <MyReportsTab complaints={complaints} loading={loading} />
+        )}
+        {activeTab === "settings" && (
+          <SettingsTab settings={userSettings} onSettingChange={handleSettingChange} />
+        )}
+        {activeTab === "tech" && <TechInfoTab />}
       </div>
-
-      {/* Tab Content */}
-      {activeTab === "reports" && (
-        <MyReportsTab complaints={complaints} loading={loading} />
-      )}
-      {activeTab === "settings" && (
-        <SettingsTab settings={userSettings} onSettingChange={handleSettingChange} />
-      )}
-      {activeTab === "tech" && <TechInfoTab />}
     </div>
   );
 }
 
-// ============================================
-// STAT CARD COMPONENT
-// ============================================
-function StatCard({ icon, label, value, color }) {
-  const colorClasses = {
-    blue: "bg-blue-50 border-blue-200",
-    purple: "bg-purple-50 border-purple-200",
-    green: "bg-green-50 border-green-200",
-  };
-
-  return (
-    <div className={`${colorClasses[color]} border rounded-lg p-3 text-center`}>
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
-      <div className="text-xs text-gray-600 mt-1">{label}</div>
-    </div>
-  );
-}
-
-// ============================================
-// TAB BUTTON COMPONENT
-// ============================================
-function TabButton({ icon, label, active, onClick }) {
+function TabButton({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 px-4 py-3 font-semibold transition flex items-center justify-center gap-2 ${
+      className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
         active
-          ? "border-b-2 border-blue-600 text-blue-600 bg-blue-50"
-          : "text-gray-600 hover:text-gray-900"
+          ? "border-blue-600 text-blue-600 bg-blue-50"
+          : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
       }`}
     >
-      <span>{icon}</span>
-      <span className="hidden sm:inline">{label}</span>
+      {label}
     </button>
   );
 }
 
-// ============================================
-// MY REPORTS TAB
-// ============================================
 function MyReportsTab({ complaints, loading }) {
   const [sortBy, setSortBy] = useState("newest");
 
@@ -198,7 +221,6 @@ function MyReportsTab({ complaints, loading }) {
     );
   }
 
-  // Sort complaints
   let sorted = [...complaints];
   if (sortBy === "newest") {
     sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -210,31 +232,26 @@ function MyReportsTab({ complaints, loading }) {
 
   return (
     <div className="space-y-4">
-      {/* Sort Controls */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Sort by:
-        </label>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         >
-          <option value="newest">🕒 Newest First</option>
-          <option value="oldest">🕖 Oldest First</option>
-          <option value="upvotes">👍 Most Upvotes</option>
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="upvotes">Most Upvotes</option>
         </select>
       </div>
 
-      {/* Reports List */}
       {sorted.length > 0 ? (
         sorted.map((complaint) => (
           <ReportCard key={complaint._id} complaint={complaint} />
         ))
       ) : (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-500 text-lg">No reports yet</p>
-          <p className="text-gray-400 text-sm mt-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <p className="text-gray-600 font-medium">No reports yet</p>
+          <p className="text-gray-500 text-sm mt-1">
             Start by reporting an issue on the Report page
           </p>
         </div>
@@ -243,24 +260,21 @@ function MyReportsTab({ complaints, loading }) {
   );
 }
 
-// ============================================
-// REPORT CARD COMPONENT (FOR PROFILE)
-// ============================================
 function ReportCard({ complaint }) {
-  const categoryEmojis = {
-    pothole: "🕳️",
-    garbage: "🗑️",
-    streetlight: "💡",
-    water: "💧",
-    parking: "🚗",
-    dumping: "🚫",
-    other: "📌",
+  const statusColors = {
+    submitted: "bg-orange-50 text-orange-700 border border-orange-100",
+    in_progress: "bg-blue-50 text-blue-700 border border-blue-100",
+    resolved: "bg-green-50 text-green-700 border border-green-100",
   };
 
-  const statusColors = {
-    submitted: "bg-yellow-100 text-yellow-800",
-    in_progress: "bg-blue-100 text-blue-800",
-    resolved: "bg-green-100 text-green-800",
+  const categoryLabels = {
+    pothole: "Pothole",
+    garbage: "Garbage",
+    streetlight: "Streetlight",
+    water: "Water",
+    parking: "Parking",
+    dumping: "Dumping",
+    other: "Other",
   };
 
   const getTimeAgo = (date) => {
@@ -284,20 +298,17 @@ function ReportCard({ complaint }) {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
-      {/* Media Preview */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
       {complaint.media && complaint.media.length > 0 && (
-        <div className="w-full h-40 bg-gray-200 overflow-hidden relative">
+        <div className="w-full h-48 bg-gray-100 relative overflow-hidden">
           <img
             src={`data:image/jpeg;base64,${complaint.media[0]}`}
             alt="complaint"
             className="w-full h-full object-cover"
             onError={(e) => {
-              // Fallback for videos
               e.target.style.display = "none";
               const parent = e.target.parentElement;
-              parent.innerHTML =
-                '<div class="w-full h-full flex items-center justify-center bg-gray-300"><span class="text-4xl">🎬</span></div>';
+              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-300"></div>';
             }}
           />
           {complaint.media.length > 1 && (
@@ -308,65 +319,67 @@ function ReportCard({ complaint }) {
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 flex-1 line-clamp-2">
+      <div className="p-4 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base font-semibold text-gray-900 line-clamp-2 flex-1">
             {complaint.title}
           </h3>
-          <span className="text-xs text-gray-500 whitespace-nowrap">
+          <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
+            <ClockIcon />
             {getTimeAgo(complaint.createdAt)}
           </span>
         </div>
 
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+        <p className="text-sm text-gray-600 line-clamp-2">
           {complaint.description}
         </p>
 
         {complaint.location?.address && (
-          <p className="text-sm text-gray-600 mb-3">
-            📍 {complaint.location.address}
-          </p>
+          <div className="flex items-center gap-1 text-xs text-gray-600">
+            <LocationIcon />
+            <span className="truncate">{complaint.location.address}</span>
+          </div>
         )}
 
-        {/* Badges */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span
-            className={`text-xs font-semibold px-2 py-1 rounded-full ${statusColors[complaint.status]}`}
-          >
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusColors[complaint.status]}`}>
             {complaint.status.replace("_", " ")}
           </span>
 
           {complaint.category && (
-            <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-              {categoryEmojis[complaint.category]} {complaint.category}
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+              {categoryLabels[complaint.category]}
+            </span>
+          )}
+
+          {complaint.severity && (
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+              Severity {complaint.severity}/10
             </span>
           )}
 
           <span
-            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+            className={`text-xs font-medium px-3 py-1 rounded-full ${
               slaInfo.isMet
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+                ? "bg-green-50 text-green-700 border border-green-100"
+                : "bg-red-50 text-red-700 border border-red-100"
             }`}
           >
             {slaInfo.text}
           </span>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 text-sm text-gray-600 border-t pt-3">
-          <span>👍 {complaint.upvotes || 0} upvotes</span>
-          <span>💬 {complaint.comments?.length || 0} comments</span>
+        <div className="flex gap-4 pt-2 border-t border-gray-200">
+          <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <ChatBubbleIcon />
+            {complaint.comments?.length || 0}
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-// ============================================
-// SETTINGS TAB
-// ============================================
 function SettingsTab({ settings, onSettingChange }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -377,297 +390,136 @@ function SettingsTab({ settings, onSettingChange }) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Username Setting */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+    <div className="space-y-4 max-w-3xl">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
           Username
         </label>
         <input
           type="text"
           value={settings.username}
           onChange={(e) => onSettingChange("username", e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
-        <p className="text-xs text-gray-500 mt-2">
-          Note: Changes saved locally only (no backend persistence)
-        </p>
+        <p className="text-xs text-gray-500 mt-2">Changes saved locally only</p>
       </div>
 
-      {/* Language Setting */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Language 🌍
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
+          Language
         </label>
         <select
           value={settings.language}
           onChange={(e) => onSettingChange("language", e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         >
-          <option value="English">🇺🇸 English</option>
-          <option value="Tamil">🇮🇳 Tamil (தமிழ்)</option>
-          <option value="Hindi">🇮🇳 Hindi (हिन्दी)</option>
-          <option value="Spanish">🇪🇸 Spanish (Español)</option>
+          <option value="English">English</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Spanish">Spanish</option>
         </select>
       </div>
 
-      {/* Theme Setting */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Theme 🎨
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
+          Theme
         </label>
         <select
           value={settings.theme}
           onChange={(e) => onSettingChange("theme", e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         >
-          <option value="light">☀️ Light</option>
-          <option value="dark">🌙 Dark</option>
-          <option value="auto">🔄 Auto</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="auto">Auto</option>
         </select>
       </div>
 
-      {/* Notification Setting */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Notifications 🔔
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <label className="block text-sm font-semibold text-gray-900 mb-3">
+          Notifications
         </label>
         <div className="space-y-2">
-          <label className="flex items-center gap-3">
+          <label className="flex items-center gap-2">
             <input type="checkbox" defaultChecked className="w-4 h-4" />
             <span className="text-sm text-gray-700">Push notifications</span>
           </label>
-          <label className="flex items-center gap-3">
+          <label className="flex items-center gap-2">
             <input type="checkbox" defaultChecked className="w-4 h-4" />
             <span className="text-sm text-gray-700">Email updates</span>
           </label>
-          <label className="flex items-center gap-3">
+          <label className="flex items-center gap-2">
             <input type="checkbox" className="w-4 h-4" />
             <span className="text-sm text-gray-700">Weekly digest</span>
           </label>
         </div>
       </div>
 
-      {/* Logout Button */}
       <button
         onClick={handleLogout}
-        className="w-full px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition flex items-center justify-center gap-2"
+        className="w-full px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-lg transition border border-red-200"
       >
-        <span>🚪</span>
-        <span>Logout</span>
+        Logout
       </button>
-
-      {/* About Section */}
-      <div className="bg-white rounded-lg shadow p-4 text-center">
-        <p className="text-xs text-gray-600">
-          CivicLens v1.0 | AI-Powered Civic Issue Tracker
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          © 2024 CivicLens. All rights reserved.
-        </p>
-      </div>
     </div>
   );
 }
 
-// ============================================
-// TECH INFO TAB
-// ============================================
 function TechInfoTab() {
   const techStack = [
-    {
-      icon: "⚛️",
-      label: "Frontend Framework",
-      description: "React + Vite + Tailwind CSS",
-    },
-    {
-      icon: "🖥️",
-      label: "Backend",
-      description: "Express.js + MongoDB",
-    },
-    {
-      icon: "🤖",
-      label: "AI Classification",
-      description: "Smart category & severity detection",
-    },
-    {
-      icon: "🗺️",
-      label: "Location Tracking",
-      description: "Leaflet maps + Geolocation API",
-    },
-    {
-      icon: "📸",
-      label: "Media Handling",
-      description: "Multi-file upload (images & videos)",
-    },
-    {
-      icon: "🔍",
-      label: "Filtering",
-      description: "Category, status, severity filters",
-    },
-    {
-      icon: "👍",
-      label: "Community Features",
-      description: "Upvotes, comments, SLA tracking",
-    },
-    {
-      icon: "📊",
-      label: "Real-time Updates",
-      description: "Instant status & upvote sync",
-    },
+    { label: "Frontend", description: "React + Vite + Tailwind CSS" },
+    { label: "Backend", description: "Express.js + MongoDB" },
+    { label: "AI", description: "Smart classification & detection" },
+    { label: "Maps", description: "Leaflet + Geolocation API" },
+    { label: "Media", description: "Multi-file upload support" },
+    { label: "Filtering", description: "Advanced search & filters" },
+    { label: "Community", description: "Upvotes, comments, SLA" },
+    { label: "Real-time", description: "Instant sync updates" },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          🧠 Technology Stack
-        </h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-4">Technology Stack</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {techStack.map((item, idx) => (
-            <div
-              key={idx}
-              className="border rounded-lg p-3 hover:shadow-md transition"
-            >
-              <div className="text-2xl mb-2">{item.icon}</div>
-              <h4 className="font-semibold text-gray-900 text-sm">
-                {item.label}
-              </h4>
+            <div key={idx} className="border border-gray-200 rounded-lg p-3">
+              <h4 className="font-semibold text-gray-900 text-sm">{item.label}</h4>
               <p className="text-xs text-gray-600 mt-1">{item.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Features List */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          ✨ Key Features
-        </h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Key Features</h3>
         <ul className="space-y-2 text-sm">
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>AI-Powered:</strong> Automatic issue classification &
-              severity detection
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>Media Support:</strong> Upload images and videos with
-              base64 encoding
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>Map Integration:</strong> Visual complaint tracking on
-              interactive maps
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>Community Engagement:</strong> Upvotes, comments, and
-              real-time updates
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>Admin Dashboard:</strong> Manage complaints & assign to
-              departments
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>SLA Tracking:</strong> 7-day resolution deadline tracking
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>✅</span>
-            <span>
-              <strong>Mobile Responsive:</strong> Works seamlessly on all
-              devices
-            </span>
-          </li>
-        </ul>
-      </div>
-
-      {/* API Endpoints */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          🔌 API Endpoints
-        </h3>
-        <div className="space-y-2 text-xs font-mono bg-gray-50 p-3 rounded">
-          <div>
-            <span className="text-green-600 font-bold">GET</span>{" "}
-            <span className="text-gray-700">/api/complaints</span>
-          </div>
-          <div>
-            <span className="text-blue-600 font-bold">POST</span>{" "}
-            <span className="text-gray-700">/api/complaints</span>
-          </div>
-          <div>
-            <span className="text-yellow-600 font-bold">PUT</span>{" "}
-            <span className="text-gray-700">/api/complaints/:id</span>
-          </div>
-          <div>
-            <span className="text-purple-600 font-bold">PATCH</span>{" "}
-            <span className="text-gray-700">/api/complaints/:id/upvote</span>
-          </div>
-          <div>
-            <span className="text-orange-600 font-bold">POST</span>{" "}
-            <span className="text-gray-700">/api/complaints/:id/comment</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Database Schema */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          💾 Database Schema
-        </h3>
-        <p className="text-xs text-gray-600 mb-2">Complaint Model includes:</p>
-        <ul className="text-xs space-y-1 text-gray-700">
-          <li>• title, description, location (lat, lng, address)</li>
-          <li>• media (base64 encoded images/videos)</li>
-          <li>• category (8 types), severity (1-10), status (3 states)</li>
-          <li>• upvotes, comments, department assignment</li>
-          <li>• timestamps (createdAt, updatedAt, resolvedAt)</li>
+          <li className="text-gray-700">AI-powered category & severity detection</li>
+          <li className="text-gray-700">Multi-file media upload with base64 encoding</li>
+          <li className="text-gray-700">Interactive map visualization with heatmap</li>
+          <li className="text-gray-700">Community features: upvotes, comments, SLA tracking</li>
+          <li className="text-gray-700">Admin dashboard for complaint management</li>
+          <li className="text-gray-700">Role-based access control and authentication</li>
+          <li className="text-gray-700">Mobile responsive design</li>
         </ul>
       </div>
     </div>
   );
 }
 
-// ============================================
-// UTILITY: GET BADGES
-// ============================================
 function getBadges(stats) {
   const badges = [];
 
   if (stats.totalReports >= 5) {
-    badges.push({
-      icon: "🥇",
-      label: "Active Reporter",
-    });
+    badges.push({ label: "Active Reporter (5+ reports)" });
   }
 
   if (stats.totalResolved >= 3) {
-    badges.push({
-      icon: "🧹",
-      label: "Clean City Hero",
-    });
+    badges.push({ label: "Clean City Hero (3+ resolved)" });
   }
 
   if (stats.totalUpvotes >= 10) {
-    badges.push({
-      icon: "🔥",
-      label: "Top Contributor",
-    });
+    badges.push({ label: "Top Contributor (10+ upvotes)" });
   }
 
   return badges;

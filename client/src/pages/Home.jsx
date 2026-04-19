@@ -62,14 +62,6 @@ export default function Home() {
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Civic Issues</h1>
-          <p className="text-sm text-gray-600 mt-1">Track and report issues in your community</p>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
         {/* Category Filter */}
