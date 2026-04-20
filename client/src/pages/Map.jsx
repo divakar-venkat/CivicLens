@@ -24,9 +24,10 @@ function LocationButton({ mapRef }) {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         if (mapRef.current) {
-          mapRef.current.setView([lat, lng], 14, {
-            animate: true,
-            duration: 1,
+          mapRef.current.flyTo([lat, lng], 14, {
+            duration: 3,
+            easeLinearity: 0.1,
+            noMoveStart: true,
           });
         }
       });
