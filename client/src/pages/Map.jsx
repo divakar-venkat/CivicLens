@@ -12,9 +12,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-// Tamil Nadu center coordinates
-const TAMIL_NADU_CENTER = [11.1271, 78.6569];
-const ZOOM_LEVEL = 8;
+// Chennai center coordinates (default focus)
+const CHENNAI_CENTER = [13.0827, 80.2707];
+const DEFAULT_ZOOM = 11;
 
 // Location button component
 function LocationButton({ mapRef }) {
@@ -48,10 +48,27 @@ function LocationButton({ mapRef }) {
   );
 }
 
+// Zoom tracker component that updates parent state
+function ZoomTracker({ onZoomChange }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const handleZoom = () => {
+      onZoomChange(map.getZoom());
+    };
+
+    map.on("zoom", handleZoom);
+    return () => map.off("zoom", handleZoom);
+  }, [map, onZoomChange]);
+
+  return null;
+}
+
 export default function Map() {
   const [complaints, setComplaints] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM);
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -84,10 +101,10 @@ export default function Map() {
       };
     }
 
-    // Fallback to center of Tamil Nadu if no coordinates
+    // Fallback to center of Chennai if no coordinates
     return {
-      lat: TAMIL_NADU_CENTER[0],
-      lng: TAMIL_NADU_CENTER[1],
+      lat: CHENNAI_CENTER[0],
+      lng: CHENNAI_CENTER[1],
     };
   };
 
@@ -104,11 +121,21 @@ export default function Map() {
     return colorMap[category] || "#95a5a6";
   };
 
+  // Calculate marker size based on zoom level
+  const getMarkerSize = (zoom) => {
+    // Zoomed out: bigger markers, zoomed in: smaller markers
+    if (zoom <= 10) return 42;
+    if (zoom <= 12) return 36;
+    if (zoom <= 14) return 30;
+    return 24;
+  };
+
   const createCustomIcon = (category) => {
+    const size = getMarkerSize(zoomLevel);
     return L.divIcon({
-      html: `<div style="background-color: ${getCategoryColor(category)}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
-      iconSize: [30, 30],
-      className: "custom-marker",
+      html: `<div style="background-color: ${getCategoryColor(category)}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: all 0.3s ease;">📍</div>`,
+      iconSize: [size, size],
+      className: "custom-marker transition-all duration-300",
     });
   };
 
@@ -128,8 +155,8 @@ export default function Map() {
       <div className="flex-1 w-full relative">
         <MapContainer
           ref={mapRef}
-          center={TAMIL_NADU_CENTER}
-          zoom={ZOOM_LEVEL}
+          center={CHENNAI_CENTER}
+          zoom={DEFAULT_ZOOM}
           style={{ width: "100%", height: "100%" }}
           className="rounded-lg"
         >
@@ -138,6 +165,9 @@ export default function Map() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
+
+          {/* Zoom Level Tracker */}
+          <ZoomTracker onZoomChange={setZoomLevel} />
 
           {/* Markers for Complaints - Only show non-resolved issues */}
           {visibleComplaints.map((complaint) => {

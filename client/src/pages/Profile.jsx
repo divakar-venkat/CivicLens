@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { calculateSLA } from "../utils/slaHelper";
 import { useAuth } from "../context/AuthContext";
+import MediaCarousel from "../components/common/MediaCarousel";
 
 // SVG Icons
 function FileIcon() {
@@ -15,7 +16,7 @@ function FileIcon() {
 
 function ThumbsUpIcon() {
   return (
-    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.646 7.289a2 2 0 01-1.789 1.106H7a2 2 0 01-2-2v-8a2 2 0 012-2h3.5a2 2 0 002-2V5a2 2 0 012-2h.5a2 2 0 012 2v7z" />
     </svg>
   );
@@ -162,8 +163,8 @@ export default function Profile() {
         )}
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-20 z-30">
-          <div className="flex border-b border-gray-200">
+        <div className="bg-white rounded-t-xl shadow-sm border border-gray-200 fixed top-20 left-0 right-0 z-40 border-b">
+          <div className="max-w-5xl mx-auto px-4 flex border-b border-gray-200">
             <TabButton
               label="My Reports"
               active={activeTab === "reports"}
@@ -182,14 +183,16 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === "reports" && (
-          <MyReportsTab complaints={complaints} loading={loading} />
-        )}
-        {activeTab === "settings" && (
-          <SettingsTab settings={userSettings} onSettingChange={handleSettingChange} />
-        )}
-        {activeTab === "tech" && <TechInfoTab />}
+        {/* Tab Content - Add top padding to account for fixed tab bar */}
+        <div className="mt-16">
+          {activeTab === "reports" && (
+            <MyReportsTab complaints={complaints} loading={loading} />
+          )}
+          {activeTab === "settings" && (
+            <SettingsTab settings={userSettings} onSettingChange={handleSettingChange} />
+          )}
+          {activeTab === "tech" && <TechInfoTab />}
+        </div>
       </div>
     </div>
   );
@@ -261,6 +264,7 @@ function MyReportsTab({ complaints, loading }) {
 }
 
 function ReportCard({ complaint }) {
+  const [showComments, setShowComments] = useState(false);
   const statusColors = {
     submitted: "bg-orange-50 text-orange-700 border border-orange-100",
     in_progress: "bg-blue-50 text-blue-700 border border-blue-100",
@@ -299,25 +303,9 @@ function ReportCard({ complaint }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
-      {/* Media Section */}
+      {/* Media Section with MediaCarousel */}
       {complaint.media && complaint.media.length > 0 ? (
-        <div className="w-full h-64 bg-gray-100 relative overflow-hidden rounded-t-xl">
-          <img
-            src={`data:image/jpeg;base64,${complaint.media[0]}`}
-            alt="complaint"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = "";
-              const parent = e.target.parentElement;
-              parent.innerHTML = '<div class="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm">Image unavailable</div>';
-            }}
-          />
-          {complaint.media.length > 1 && (
-            <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold">
-              +{complaint.media.length - 1}
-            </div>
-          )}
-        </div>
+        <MediaCarousel media={complaint.media} />
       ) : (
         <div className="w-full h-64 bg-gradient-to-br from-gray-50 to-gray-100 rounded-t-xl flex flex-col items-center justify-center border-b border-gray-200">
           <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,11 +367,38 @@ function ReportCard({ complaint }) {
 
         <div className="flex gap-4 pt-2 border-t border-gray-200">
           <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <ThumbsUpIcon />
+            {complaint.upvotes || 0}
+          </span>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="text-sm font-medium text-gray-700 flex items-center gap-2 hover:text-blue-600 transition cursor-pointer"
+          >
             <ChatBubbleIcon />
             {complaint.comments?.length || 0}
-          </span>
+          </button>
         </div>
       </div>
+
+      {/* Comments Section - Expandable */}
+      {showComments && (
+        <div className="border-t border-gray-200 bg-gray-50 p-4">
+          <div className="space-y-2">
+            {complaint.comments && complaint.comments.length > 0 ? (
+              complaint.comments.map((comment, idx) => (
+                <div key={idx} className="bg-white rounded p-3 border border-gray-200">
+                  <p className="text-sm text-gray-900">{comment.text}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-3">No comments yet</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

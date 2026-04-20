@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function MediaCarousel({ media }) {
   const [current, setCurrent] = useState(0);
@@ -6,6 +6,30 @@ export default function MediaCarousel({ media }) {
   const [startX, setStartX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
+
+  // Smart autoplay - play when in viewport, pause when out
+  useEffect(() => {
+    if (!videoRef.current || mediaTypes[current] !== "video") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !userInteracted) {
+          videoRef.current?.play();
+          setIsPlaying(true);
+        } else {
+          videoRef.current?.pause();
+          setIsPlaying(false);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [current, mediaTypes, userInteracted]);
 
   // Show placeholder if no media
   if (!media || media.length === 0) {
@@ -34,10 +58,14 @@ export default function MediaCarousel({ media }) {
 
   const goToPrevious = () => {
     setCurrent((prev) => (prev - 1 + media.length) % media.length);
+    setIsPlaying(false);
+    setUserInteracted(false);
   };
 
   const goToNext = () => {
     setCurrent((prev) => (prev + 1) % media.length);
+    setIsPlaying(false);
+    setUserInteracted(false);
   };
 
   // Swipe/Drag handlers
@@ -71,6 +99,21 @@ export default function MediaCarousel({ media }) {
     setIsDragging(false);
   };
 
+  // Handle video play/pause toggle on click
+  const handleVideoClick = (e) => {
+    e.stopPropagation();
+    setUserInteracted(true);
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -82,44 +125,34 @@ export default function MediaCarousel({ media }) {
       onTouchEnd={handleMouseUp}
       onTouchMove={handleMouseMove}
     >
-      {/* Media Display */}
-      {isVideo ? (
-        <video
-          src={videoSrc}
-          controls
-          onError={handleVideoError}
-          className="w-full h-full object-cover pointer-events-none"
-        />
-      ) : (
-        <img
-          src={imgSrc}
-          alt="complaint media"
-          onError={handleImageError}
-          className="w-full h-full object-cover pointer-events-none select-none"
-          draggable={false}
-        />
-      )}
+      {/* Media Display with smooth transition */}
+      <div className="w-full h-full transition-opacity duration-300 overflow-hidden">
+        {isVideo ? (
+          <video
+            ref={videoRef}
+            src={videoSrc}
+            onError={handleVideoError}
+            onClick={handleVideoClick}
+            autoPlay={false}
+            controlsList="nopictureinpicture"
+            className="w-full h-full object-cover pointer-events-auto cursor-pointer"
+            style={{ display: "block" }}
+          />
+        ) : (
+          <img
+            src={imgSrc}
+            alt="complaint media"
+            onError={handleImageError}
+            className="w-full h-full object-cover pointer-events-none select-none"
+            draggable={false}
+          />
+        )}
+      </div>
 
-      {/* Counter Badge */}
+      {/* Counter Badge - Only show numbers, no dots */}
       {media.length > 1 && (
-        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none">
+        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none">
           {current + 1} / {media.length}
-        </div>
-      )}
-
-      {/* Dot Indicators (No buttons, just dots for pagination) */}
-      {media.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1.5 pointer-events-auto">
-          {media.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrent(index)}
-              className={`w-2 h-2 rounded-full transition ${
-                index === current ? "bg-white" : "bg-white/50"
-              }`}
-              title={`Image ${index + 1}`}
-            />
-          ))}
         </div>
       )}
 
