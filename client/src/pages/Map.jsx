@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useState, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import API from "../services/api";
 import CategoryFilter from "../components/common/CategoryFilter";
@@ -16,10 +16,42 @@ L.Icon.Default.mergeOptions({
 const TAMIL_NADU_CENTER = [11.1271, 78.6569];
 const ZOOM_LEVEL = 8;
 
+// Location button component
+function LocationButton({ mapRef }) {
+  const handleLocate = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        if (mapRef.current) {
+          mapRef.current.setView([lat, lng], 14, {
+            animate: true,
+            duration: 1,
+          });
+        }
+      });
+    }
+  };
+
+  return (
+    <button
+      onClick={handleLocate}
+      className="fixed bottom-32 right-6 z-[9999] w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:shadow-xl transition group"
+      title="My Location"
+    >
+      <svg className="w-5 h-5 text-gray-600 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    </button>
+  );
+}
+
 export default function Map() {
   const [complaints, setComplaints] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -37,6 +69,9 @@ export default function Map() {
 
     fetchComplaints();
   }, [selectedCategory]);
+
+  // Filter out resolved issues - only show submitted and in_progress
+  const visibleComplaints = complaints.filter((c) => c.status !== "resolved");
 
   // Generate coordinates based on complaint data
   const getCoordinates = (complaint) => {
@@ -80,13 +115,18 @@ export default function Map() {
     <div className="flex flex-col h-screen pb-24">
       {/* Filter Bar */}
       <div className="bg-white shadow p-4 z-10">
-        <CategoryFilter selectedCategory={selectedCategory} onSelect={setSelectedCategory} />
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="inline-block min-w-full">
+            <CategoryFilter selectedCategory={selectedCategory} onSelect={setSelectedCategory} />
+          </div>
+        </div>
         {loading && <p className="text-xs text-gray-500 mt-2">Loading complaints...</p>}
       </div>
 
       {/* Map Container */}
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full relative">
         <MapContainer
+          ref={mapRef}
           center={TAMIL_NADU_CENTER}
           zoom={ZOOM_LEVEL}
           style={{ width: "100%", height: "100%" }}
@@ -98,8 +138,8 @@ export default function Map() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
 
-          {/* Markers for Complaints */}
-          {complaints.map((complaint) => {
+          {/* Markers for Complaints - Only show non-resolved issues */}
+          {visibleComplaints.map((complaint) => {
             const coords = getCoordinates(complaint);
             return (
               <Marker
@@ -170,14 +210,28 @@ export default function Map() {
             );
           })}
         </MapContainer>
+
+        {/* My Location Button */}
+        <LocationButton mapRef={mapRef} />
+
+        {/* No Data Message */}
+        {!loading && visibleComplaints.length === 0 && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow">
+            <p className="text-gray-600 text-sm">No complaints in this category</p>
+          </div>
+        )}
       </div>
 
-      {/* No Data Message */}
-      {!loading && complaints.length === 0 && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow">
-          <p className="text-gray-600 text-sm">No complaints in this category</p>
-        </div>
-      )}
+      {/* Hidden CSS for scrollbar */}
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

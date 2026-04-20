@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import API from "../services/api";
 import ComplaintCard from "../components/common/ComplaintCard";
 import CategoryFilter from "../components/common/CategoryFilter";
@@ -40,6 +41,8 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
+  const focusRef = useRef(null);
+  const locationState = useLocation();
 
   // Fetch data only once on mount
   useEffect(() => {
@@ -59,6 +62,15 @@ export default function Home() {
 
     fetchComplaints();
   }, []);
+
+  // Scroll to focused complaint when view is loaded
+  useEffect(() => {
+    if (locationState.state?.focusComplaintId && focusRef.current) {
+      setTimeout(() => {
+        focusRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [locationState, allComplaints]);
 
   // Filter and sort locally (no API call) - instant updates, no flicker
   const complaints = applyFilterAndSort(allComplaints, selectedCategory, sortBy);
@@ -129,10 +141,14 @@ export default function Home() {
             {complaints.length > 0 ? (
               <div className="space-y-4">
                 {complaints.map((complaint) => (
-                  <ComplaintCard
+                  <div
                     key={complaint._id}
-                    complaint={complaint}
-                  />
+                    ref={locationState.state?.focusComplaintId === complaint._id ? focusRef : null}
+                  >
+                    <ComplaintCard
+                      complaint={complaint}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
