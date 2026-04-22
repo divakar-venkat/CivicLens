@@ -1,5 +1,6 @@
 const Complaint = require("../models/Complaint");
 const classifyIssue = require("../services/aiService");
+const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
 
 // Create Complaint
 exports.createComplaint = async (req, res) => {
@@ -28,10 +29,38 @@ exports.createComplaint = async (req, res) => {
       address: parsedLocation.address || "Not specified",
     };
 
-    // Handle media files - store as plain base64 strings
+    // Handle media files - upload to Cloudinary and store URLs
     let media = [];
     if (req.files && req.files.length > 0) {
-      media = req.files.map((file) => file.buffer.toString("base64"));
+      try {
+        console.log(`Processing ${req.files.length} media files...`);
+
+        // Upload all files to Cloudinary in parallel
+        const uploadPromises = req.files.map((file, index) => {
+          console.log(
+            `Uploading file ${index + 1}: ${file.originalname} (${file.mimetype}, ${file.size} bytes)`
+          );
+          return uploadToCloudinary(file.buffer, file.mimetype)
+            .then((url) => {
+              console.log(`✓ File ${index + 1} uploaded: ${url}`);
+              return url;
+            })
+            .catch((error) => {
+              console.error(`✗ Failed to upload file ${index + 1}:`, error.message);
+              throw error;
+            });
+        });
+
+        media = await Promise.all(uploadPromises);
+        console.log("All files uploaded to Cloudinary:", media);
+      } catch (uploadError) {
+        console.error("Media upload error:", uploadError.message);
+        return res.status(400).json({
+          message: "Failed to upload media files",
+          error: uploadError.message,
+          details: uploadError.stack,
+        });
+      }
     }
 
     // Determine category: use provided or auto-classify
